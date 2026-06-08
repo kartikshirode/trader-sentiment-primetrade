@@ -1,5 +1,5 @@
-2026-06-08T17:17:21 [INFO] binance_bot: cli start: --dry-run --symbol BTCUSDT --side BUY --type STOP_LIMIT --qty 0.001 --stop-price 65000 --price 64900 --log-file logs/stop_limit_order_sample.log
-2026-06-08T17:17:21 [INFO] binance_bot: using DryRunClient (no network)
-2026-06-08T17:17:21 [INFO] binance_bot.orders: stop-limit order request: symbol=BTCUSDT side=BUY qty=0.001 stop=65000.0 limit=64900.0
-2026-06-08T17:17:21 [INFO] binance_bot.dry_run: dry-run order placed: orderId=999000001 symbol=BTCUSDT side=BUY type=STOP_LIMIT qty=0.001
-2026-06-08T17:17:21 [INFO] binance_bot: cli end: success orderId=999000001 status=NEW
+2026-06-08T17:42:44 [INFO] binance_bot: cli start: --dry-run --symbol BTCUSDT --side BUY --type STOP_LIMIT --qty 0.001 --stop-price 65000 --price 64900 --log-file logs/stop_limit_order_sample.log
+2026-06-08T17:42:44 [INFO] binance_bot: using DryRunClient (no network)
+2026-06-08T17:42:44 [INFO] binance_bot.orders: stop-limit order request: symbol=BTCUSDT side=BUY qty=0.001 stop=65000.0 limit=64900.0
+2026-06-08T17:42:44 [INFO] binance_bot.dry_run: dry-run order placed: orderId=999000003 symbol=BTCUSDT side=BUY type=STOP_LIMIT qty=0.001
+2026-06-08T17:42:44 [INFO] binance_bot: cli end: success orderId=999000003 status=NEW
