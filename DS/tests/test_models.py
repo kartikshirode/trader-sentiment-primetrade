@@ -11,6 +11,7 @@ from sklearn.metrics import roc_auc_score
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+from src.features import REGIME_ORDER
 from src.models import (
     DEFAULT_SEED,
     build_winprob_dataset,
@@ -60,12 +61,15 @@ def test_cohort_label_count_matches_input():
 
 
 def _toy_winprob_dataset() -> pd.DataFrame:
-    """Synthetic trades where regime_A wins 80%, regime_B wins 30%, so the model has obvious signal."""
+    """Synthetic trades where Extreme Fear wins 80%, Greed wins 30%, so the model has obvious signal."""
     rng = np.random.default_rng(42)
     n = 400
-    regime = rng.choice(["A", "B"], size=n)
+    # Use real labels from REGIME_ORDER so dummy column generation matches production.
+    high_regime, low_regime = "Extreme Fear", "Greed"
+    assert high_regime in REGIME_ORDER and low_regime in REGIME_ORDER
+    regime = rng.choice([high_regime, low_regime], size=n)
     is_win = np.where(
-        regime == "A", rng.binomial(1, 0.8, n), rng.binomial(1, 0.3, n)
+        regime == high_regime, rng.binomial(1, 0.8, n), rng.binomial(1, 0.3, n)
     )
     df = pd.DataFrame(
         {

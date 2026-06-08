@@ -1,6 +1,7 @@
 """Download and load the two source datasets."""
 from __future__ import annotations
 
+import warnings
 from pathlib import Path
 
 import pandas as pd
@@ -32,11 +33,24 @@ def download_raw(force: bool = False) -> None:
 def load_trades() -> pd.DataFrame:
     df = pd.read_csv(TRADES_FILE)
     df.columns = [c.strip() for c in df.columns]
+    required = {"Timestamp IST", "Closed PnL", "Size USD", "Account", "Coin", "Side"}
+    missing = required - set(df.columns)
+    if missing:
+        raise ValueError(f"Trades CSV missing required columns: {sorted(missing)}")
     df["ts"] = pd.to_datetime(df["Timestamp IST"], format="%d-%m-%Y %H:%M", errors="coerce")
     bad = df["ts"].isna().sum()
     if bad:
-        print(f"dropped {bad} rows with unparseable Timestamp IST")
+        warnings.warn(
+            f"dropped {bad} rows with unparseable Timestamp IST",
+            RuntimeWarning,
+            stacklevel=2,
+        )
         df = df[df["ts"].notna()].copy()
+    if df.empty:
+        raise ValueError(
+            "All rows failed timestamp parsing. Check the 'Timestamp IST' format "
+            "(expected DD-MM-YYYY HH:MM)."
+        )
     df["date"] = df["ts"].dt.date.astype("datetime64[ns]")
     df["hour"] = df["ts"].dt.hour
     df = df.rename(

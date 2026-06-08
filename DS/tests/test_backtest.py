@@ -6,6 +6,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -70,12 +71,8 @@ def test_cohort_filter():
 def test_length_mismatch_raises():
     df = _frame()
     proba = np.zeros(5)
-    try:
+    with pytest.raises(ValueError, match="same length"):
         run_backtest(df, proba)
-    except ValueError as e:
-        assert "same length" in str(e)
-        return
-    assert False, "should have raised"
 
 
 def main():

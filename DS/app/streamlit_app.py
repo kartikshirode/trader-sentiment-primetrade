@@ -34,9 +34,12 @@ st.set_page_config(page_title="Trader vs Sentiment (Primetrade.ai)", layout="wid
 
 
 @st.cache_data(show_spinner="Loading data...")
-def _load() -> pd.DataFrame:
-    t = load_trades()
-    s = load_sentiment()
+def _load() -> pd.DataFrame | None:
+    try:
+        t = load_trades()
+        s = load_sentiment()
+    except FileNotFoundError:
+        return None
     df = attach_sentiment(t, s)
     df = add_trade_features(df)
     return df
@@ -65,6 +68,12 @@ st.sidebar.caption("Primetrade.ai DS submission v2")
 page = st.sidebar.radio("Page", ["Overview", "Trader Explorer", "Strategy Simulator"])
 
 df = _load()
+if df is None:
+    st.error(
+        "Source data missing. Run: "
+        "`python -c \"from src.data_loader import download_raw; download_raw()\"`"
+    )
+    st.stop()
 cohort_bundle, winprob_model, cohort_labels = _load_models()
 
 if cohort_labels is None:
@@ -85,7 +94,7 @@ if page == "Overview":
         "Date range", min_value=min_date, max_value=max_date,
         value=(min_date, max_date),
     )
-    mask = (df["date"].dt.date >= rng[0]) & (df["date"].dt.date <= rng[1])
+    mask = (df["date"] >= pd.Timestamp(rng[0])) & (df["date"] <= pd.Timestamp(rng[1]) + pd.Timedelta(days=1))
     subset = df[mask].dropna(subset=["regime"]).copy()
 
     c1, c2, c3, c4 = st.columns(4)
@@ -105,7 +114,7 @@ if page == "Overview":
     regime_table = (
         regime_table.set_index("regime").reindex(REGIME_ORDER).reset_index()
     )
-    st.dataframe(regime_table.round(4), use_container_width=True)
+    st.dataframe(regime_table.round(4), width="stretch")
 
     st.subheader("Cumulative PnL by regime")
     daily = (
@@ -140,7 +149,7 @@ elif page == "Trader Explorer":
     st.subheader("Per-regime metrics for this trader")
     per_regime = metrics_by_group(sub, "regime")
     per_regime = per_regime.set_index("regime").reindex(REGIME_ORDER).reset_index()
-    st.dataframe(per_regime.round(4), use_container_width=True)
+    st.dataframe(per_regime.round(4), width="stretch")
 
     st.subheader("Per-coin PnL")
     coin_pnl = sub.groupby("coin")["closed_pnl"].sum().sort_values(ascending=False).head(15)
@@ -186,6 +195,13 @@ elif page == "Strategy Simulator":
         "Include cohorts", options=cohort_options, default=cohort_options
     )
 
+    if not cohort_pick:
+        st.warning("Select at least one cohort to run the backtest.")
+        st.stop()
+    if set(exclude) == set(REGIME_ORDER):
+        st.warning("All regimes excluded; nothing left to take.")
+        st.stop()
+
     # Rebuild the test slice with predictions
     closes = df[df["closed_pnl"] != 0].dropna(subset=["regime"]).copy()
     ds = build_winprob_dataset(closes, cohort_labels)
@@ -194,7 +210,7 @@ elif page == "Strategy Simulator":
     X = test.drop(columns=[c for c in drop if c in test.columns]).values
     proba = winprob_model.predict_proba(X)[:, 1]
 
-    closes_sorted = closes.sort_values("ts").reset_index(drop=True)
+    closes_sorted = closes.sort_values("ts", kind="mergesort").reset_index(drop=True)
     trades_test = closes_sorted.iloc[len(train):].copy()
     trades_test["cohort"] = trades_test["account"].map(cohort_labels).fillna(-1).astype(int)
 

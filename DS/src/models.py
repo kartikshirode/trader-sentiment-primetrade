@@ -42,13 +42,16 @@ def select_k(features: pd.DataFrame, k_range: Iterable[int] = range(3, 8), seed:
     """Pick k by silhouette score on a fixed scaler."""
     scaler = StandardScaler()
     X = scaler.fit_transform(features.values)
-    best_k, best_score = None, -1.0
+    best_k = None
+    best_score = float("-inf")
     for k in k_range:
         km = KMeans(n_clusters=k, n_init=10, random_state=seed)
         labels = km.fit_predict(X)
         score = silhouette_score(X, labels)
         if score > best_score:
             best_k, best_score = k, score
+    if best_k is None:
+        raise ValueError("no valid k found in range")
     return int(best_k)
 
 
@@ -99,7 +102,7 @@ def build_winprob_dataset(df_closes: pd.DataFrame, cohort_labels: pd.Series) -> 
     cohort_labels: Series of cohort id keyed by account.
     """
     d = df_closes.copy()
-    d = d.sort_values("ts").reset_index(drop=True)
+    d = d.sort_values("ts", kind="mergesort").reset_index(drop=True)
     d["cohort"] = d["account"].map(cohort_labels).fillna(-1).astype(int)
 
     # trader historical win-rate computed strictly on rows before the current one
@@ -110,9 +113,24 @@ def build_winprob_dataset(df_closes: pd.DataFrame, cohort_labels: pd.Series) -> 
     )
     d.drop(columns=["_running_wins", "_running_trades"], inplace=True)
 
-    regime_dummies = pd.get_dummies(d["regime"].astype(str), prefix="regime")
-    side_dummies = pd.get_dummies(d["side_norm"], prefix="side")
-    cohort_dummies = pd.get_dummies(d["cohort"], prefix="cohort")
+    # Force fixed vocabulary on every one-hot block so the feature matrix has
+    # identical columns regardless of which rows happen to be present in this batch.
+    regime_cols = [f"regime_{r}" for r in REGIME_ORDER]
+    regime_dummies = (
+        pd.get_dummies(d["regime"].astype(str), prefix="regime")
+        .reindex(columns=regime_cols, fill_value=0)
+    )
+    side_cols = ["side_BUY", "side_SELL"]
+    side_dummies = (
+        pd.get_dummies(d["side_norm"], prefix="side")
+        .reindex(columns=side_cols, fill_value=0)
+    )
+    cohort_values = sorted(set(int(c) for c in cohort_labels.unique()) | {-1})
+    cohort_cols = [f"cohort_{c}" for c in cohort_values]
+    cohort_dummies = (
+        pd.get_dummies(d["cohort"], prefix="cohort")
+        .reindex(columns=cohort_cols, fill_value=0)
+    )
 
     feature_block = pd.concat(
         [
@@ -131,7 +149,7 @@ def build_winprob_dataset(df_closes: pd.DataFrame, cohort_labels: pd.Series) -> 
 
 def time_split(features: pd.DataFrame, frac: float = 0.8) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Sort by __ts__ and split into train (first frac) and test (last 1-frac)."""
-    f = features.sort_values("__ts__").reset_index(drop=True)
+    f = features.sort_values("__ts__", kind="mergesort").reset_index(drop=True)
     cut = int(len(f) * frac)
     return f.iloc[:cut].copy(), f.iloc[cut:].copy()
 
@@ -150,7 +168,7 @@ def fit_winprob(train: pd.DataFrame, seed: int = DEFAULT_SEED):
             colsample_bytree=0.9,
             eval_metric="logloss",
             random_state=seed,
-            n_jobs=-1,
+            n_jobs=1,
             tree_method="hist",
         )
     else:  # pragma: no cover
