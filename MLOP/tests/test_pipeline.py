@@ -63,6 +63,15 @@ def test_compute_signal_invalid_window() -> None:
         compute_signal(df, window=0)
 
 
+def test_compute_signal_window_one() -> None:
+    # With window=1 the rolling mean equals close on every row, so close > rolling_mean
+    # is never true. Signal sum must be zero.
+    df = pd.DataFrame({"close": [10, 12, 11, 15, 14, 13, 16, 18, 17, 20]})
+    out = compute_signal(df, window=1)
+    assert out["signal"].sum() == 0
+    assert (out["rolling_mean"] == out["close"]).all()
+
+
 def test_compute_signal_does_not_mutate_input() -> None:
     df = pd.DataFrame({"close": [1, 2, 3, 4, 5]})
     snapshot = df.copy()

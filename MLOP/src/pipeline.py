@@ -44,6 +44,7 @@ def compute_signal(df: pd.DataFrame, window: int) -> pd.DataFrame:
     """
     if window < 1:
         raise DataError(f"window must be >= 1, got {window}")
+    # Defensive copy so the caller's DataFrame is never mutated.
     out = df.copy()
     out["rolling_mean"] = out["close"].rolling(window=window, min_periods=window).mean()
     out["signal"] = (out["close"] > out["rolling_mean"]).astype(int)

@@ -76,14 +76,21 @@ def main(argv: list[str] | None = None) -> int:
 
     except (ConfigError, DataError) as exc:
         logger.error("validation failure: %s", exc)
-        payload = write_error(args.output, version=version, error_message=str(exc))
+        extra = {"config_path": str(args.config)} if isinstance(exc, ConfigError) else None
+        payload = write_error(
+            args.output, version=version, error_message=str(exc), extra=extra
+        )
         logger.info("job end: error")
         _emit(payload)
         return 1
     except Exception as exc:  # noqa: BLE001
         logger.exception("unexpected failure")
+        extra = {"config_path": str(args.config)} if version == DEFAULT_VERSION else None
         payload = write_error(
-            args.output, version=version, error_message=f"{type(exc).__name__}: {exc}"
+            args.output,
+            version=version,
+            error_message=f"{type(exc).__name__}: {exc}",
+            extra=extra,
         )
         logger.info("job end: error")
         _emit(payload)
