@@ -41,7 +41,15 @@ python cli.py --dry-run --symbol BTCUSDT --side BUY --type MARKET --qty 0.001
 
 # Custom log file path
 python cli.py --symbol BTCUSDT --side BUY --type MARKET --qty 0.001 --log-file logs/my_run.log
+
+# Quick credential smoke test (no order placed)
+python cli.py --check-balance --symbol BTCUSDT --side BUY --type MARKET --qty 0.001
 ```
+
+The `--check-balance` flag hits the account balance endpoint and prints the USDT
+available, then exits. It is the fastest way to confirm your keys are accepted
+before placing any orders. It still needs the regular order args because
+argparse requires them, but they are ignored when `--check-balance` is set.
 
 ## Output shape
 
@@ -79,7 +87,7 @@ Python/
   tests/
     test_validators.py    10 tests on each validator
     test_orders.py        8 tests using DryRunClient
-    test_cli.py           8 tests on argparse + exit codes
+    test_cli.py           11 tests on argparse + exit codes
   logs/
     market_order_sample.log
     limit_order_sample.log
@@ -97,7 +105,7 @@ Python/
 pytest -q
 ```
 
-26 tests, runs in under a second. All use the `DryRunClient` so no network or API keys required.
+29 tests, runs in under a second. All use the `DryRunClient` so no network or API keys required.
 
 ## Sample logs
 
@@ -114,7 +122,7 @@ pytest -q
 
 | Symptom                                         | Likely cause |
 | ----------------------------------------------- | ------------ |
-| `APIError(code=-2015) Invalid API-key...`       | Keys from wrong testnet (Spot vs Futures), IP restriction enabled, or missing Futures permission |
+| `APIError(code=-2015) Invalid API-key...`       | Keys from wrong testnet (Spot vs Futures), IP restriction enabled, or missing Futures permission. Run `python cli.py --check-balance ...` to confirm before placing real orders. The keys committed in any local `.env` left over from earlier dev returned `-2015` and should be regenerated from the testnet dashboard. |
 | `APIError(code=-1021) Timestamp ahead`          | System clock drift; sync time |
 | `APIError(code=-2019) Margin insufficient`      | Trying to place a position size larger than virtual balance covers |
 | `APIError(code=-4164) Notional too small`       | Binance Futures has a minimum notional (`qty * price >= 100` USDT for BTCUSDT); raise `--qty` |

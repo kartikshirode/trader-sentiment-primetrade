@@ -29,15 +29,15 @@ def test_limit_order_returns_new():
     resp = place_limit(client, "BTCUSDT", "SELL", 0.002, 75000.0)
     assert resp["status"] == "NEW"
     assert resp["type"] == "LIMIT"
-    assert resp["price"] == "75000.00"
+    assert float(resp["price"]) == 75000.0
 
 
 def test_stop_limit_includes_stop_price():
     client = DryRunClient()
     resp = place_stop_limit(client, "BTCUSDT", "BUY", 0.001, 65000.0, 64900.0)
     assert resp["type"] == "STOP_LIMIT"
-    assert resp["stopPrice"] == "65000.00"
-    assert resp["price"] == "64900.00"
+    assert float(resp["stopPrice"]) == 65000.0
+    assert float(resp["price"]) == 64900.0
 
 
 def test_limit_requires_price():
