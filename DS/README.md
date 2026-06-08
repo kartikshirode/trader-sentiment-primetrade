@@ -13,6 +13,16 @@ Full writeup in [outputs/report.md](outputs/report.md).
 
 ## Run it
 
+One-shot (PowerShell):
+
+```
+pip install -r requirements.txt
+./run_all.ps1
+streamlit run app/streamlit_app.py
+```
+
+Step-by-step (any shell):
+
 ```
 pip install -r requirements.txt
 python -c "from src.data_loader import download_raw; download_raw()"
@@ -22,6 +32,10 @@ jupyter nbconvert --to notebook --execute notebooks/02_modeling.ipynb --output 0
 jupyter nbconvert --to notebook --execute notebooks/03_backtest.ipynb --output 03_backtest.ipynb --ExecutePreprocessor.timeout=600
 streamlit run app/streamlit_app.py
 ```
+
+If `gdown` rate-limits, download the two CSVs manually from the assignment Drive links and place them at `data/raw/historical_trades.csv` and `data/raw/fear_greed.csv`.
+
+Security note: only load `.pkl` model files produced by this codebase. Pickle deserialisation runs arbitrary code, so do not unpickle files from untrusted sources.
 
 ## Folder layout
 
@@ -46,8 +60,10 @@ DS/
     report.md             written report (also rendered to PDF/DOCX in submission/)
   tests/                  pytest suite (metrics, models, backtest)
   submission_v1/          original v1 submission preserved as backup
+  submission_v2/          rendered v2 deliverables: report.pdf, report.docx, report_full.md, copies of the key figures
   data/raw/               source CSVs (gitignored, auto-downloaded)
   build_notebooks.py      regenerates the three notebooks from scratch
+  run_all.ps1             one-shot pipeline runner (PowerShell)
   requirements.txt
   README.md
 ```

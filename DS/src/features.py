@@ -1,6 +1,8 @@
 """Feature engineering: trade-level join + per-trader vectors for ML."""
 from __future__ import annotations
 
+import warnings
+
 import numpy as np
 import pandas as pd
 
@@ -29,7 +31,11 @@ def add_trade_features(df: pd.DataFrame) -> pd.DataFrame:
     df["side_norm"] = df["side"].str.upper()
     mapped = df["side_norm"].map({"BUY": 1, "SELL": -1})
     if mapped.isna().any():
-        print(f"warning: {mapped.isna().sum()} trades with unrecognised side")
+        warnings.warn(
+            f"{mapped.isna().sum()} trades with unrecognised side",
+            RuntimeWarning,
+            stacklevel=2,
+        )
     df["signed_size"] = df["size_usd"] * mapped.fillna(0)
     df["hour_sin"] = np.sin(2 * np.pi * df["hour"] / 24.0)
     df["hour_cos"] = np.cos(2 * np.pi * df["hour"] / 24.0)

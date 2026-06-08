@@ -84,6 +84,7 @@ for ax, m in zip(axes.flat, metrics_to_plot):
 plt.tight_layout()
 plt.savefig(FIG_DIR / 'metrics_by_regime.png', dpi=140)
 plt.show()
+plt.close('all')
 """),
     md("## Sentiment timeline"),
     code("""fig, ax = plt.subplots(figsize=(14, 4))
@@ -96,6 +97,7 @@ ax.legend(loc='upper left', fontsize=9, ncol=5, frameon=False)
 plt.tight_layout()
 plt.savefig(FIG_DIR / 'sentiment_timeline.png', dpi=140)
 plt.show()
+plt.close('all')
 """),
     md("## Cumulative PnL by regime"),
     code("""daily = df.dropna(subset=['regime']).groupby(['date','regime'], observed=True)['closed_pnl'].sum().unstack(fill_value=0)
@@ -110,6 +112,7 @@ ax.legend(loc='upper left', ncol=5, fontsize=9, frameon=False)
 plt.tight_layout()
 plt.savefig(FIG_DIR / 'cumulative_pnl_by_regime.png', dpi=140)
 plt.show()
+plt.close('all')
 """),
 ]
 
@@ -216,6 +219,7 @@ ax.legend()
 plt.tight_layout()
 plt.savefig(FIG_DIR / 'winprob_calibration.png', dpi=140)
 plt.show()
+plt.close('all')
 """),
     md("## Feature importance"),
     code("""drop = {'__ts__','__label__','__account__'}
@@ -230,6 +234,7 @@ ax.set_title('Top 10 feature importances (win-probability model)')
 plt.tight_layout()
 plt.savefig(FIG_DIR / 'winprob_feature_importance.png', dpi=140)
 plt.show()
+plt.close('all')
 imp_df
 """),
 ]
@@ -317,6 +322,7 @@ ax.legend()
 plt.tight_layout()
 plt.savefig(FIG_DIR / 'backtest_equity.png', dpi=140)
 plt.show()
+plt.close('all')
 """),
     md("## Sensitivity: vary min_winprob"),
     code("""rows = []
