@@ -1,0 +1,5 @@
+2026-06-08T17:17:21 [INFO] binance_bot: cli start: --dry-run --symbol BTCUSDT --side SELL --type LIMIT --qty 0.001 --price 75000 --log-file logs/limit_order_sample.log
+2026-06-08T17:17:21 [INFO] binance_bot: using DryRunClient (no network)
+2026-06-08T17:17:21 [INFO] binance_bot.orders: limit order request: symbol=BTCUSDT side=SELL qty=0.001 price=75000.0
+2026-06-08T17:17:21 [INFO] binance_bot.dry_run: dry-run order placed: orderId=999000001 symbol=BTCUSDT side=SELL type=LIMIT qty=0.001
+2026-06-08T17:17:21 [INFO] binance_bot: cli end: success orderId=999000001 status=NEW

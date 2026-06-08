@@ -1,0 +1,5 @@
+2026-06-08T17:17:20 [INFO] binance_bot: cli start: --dry-run --symbol BTCUSDT --side BUY --type MARKET --qty 0.001 --log-file logs/market_order_sample.log
+2026-06-08T17:17:20 [INFO] binance_bot: using DryRunClient (no network)
+2026-06-08T17:17:20 [INFO] binance_bot.orders: market order request: symbol=BTCUSDT side=BUY qty=0.001
+2026-06-08T17:17:20 [INFO] binance_bot.dry_run: dry-run order placed: orderId=999000001 symbol=BTCUSDT side=BUY type=MARKET qty=0.001
+2026-06-08T17:17:20 [INFO] binance_bot: cli end: success orderId=999000001 status=FILLED
