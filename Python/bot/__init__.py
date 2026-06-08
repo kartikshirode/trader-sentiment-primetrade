@@ -1,5 +1,10 @@
 """Binance Futures Testnet trading bot for the Primetrade.ai Python intern task."""
-from .client import BinanceFuturesClient, OrderError
+try:
+    from .client import BinanceFuturesClient, OrderError
+except ImportError:
+    # python-binance is optional. Without it, only --dry-run mode works.
+    BinanceFuturesClient = None  # type: ignore[assignment,misc]
+    OrderError = RuntimeError  # type: ignore[assignment,misc]
 from .config import Credentials, load_credentials
 from .dry_run import DryRunClient
 from .logging_config import setup_logger

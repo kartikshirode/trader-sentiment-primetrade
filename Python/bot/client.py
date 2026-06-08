@@ -4,6 +4,8 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+import requests
+
 try:
     from binance.client import Client
     from binance.enums import (
@@ -19,6 +21,13 @@ except ImportError as exc:  # pragma: no cover
     raise ImportError(
         "python-binance is required. Install with: pip install python-binance"
     ) from exc
+
+_NETWORK_EXCEPTIONS = (
+    BinanceAPIException,
+    BinanceRequestException,
+    requests.exceptions.Timeout,
+    requests.exceptions.ConnectionError,
+)
 
 log = logging.getLogger("binance_bot.client")
 
@@ -47,13 +56,17 @@ class BinanceFuturesClient:
         if not api_key or not api_secret:
             raise OrderError("api_key and api_secret are required for live testnet calls")
         # testnet=True is hardcoded so this client cannot ever hit live markets.
-        self._client = Client(api_key, api_secret, testnet=True)
+        # 10s timeout stops the CLI hanging when testnet is slow or offline.
+        self._client = Client(
+            api_key, api_secret, testnet=True,
+            requests_params={"timeout": 10},
+        )
 
     def get_account_balance(self) -> list[dict]:
         """Return the futures account balances list (smoke-test connectivity)."""
         try:
             return self._client.futures_account_balance()
-        except (BinanceAPIException, BinanceRequestException) as exc:
+        except _NETWORK_EXCEPTIONS as exc:
             raise self._wrap(exc) from exc
 
     def place_order(
@@ -84,7 +97,7 @@ class BinanceFuturesClient:
         log.info("placing order: %s", {k: v for k, v in params.items() if k != "timestamp"})
         try:
             response = self._client.futures_create_order(**params)
-        except (BinanceAPIException, BinanceRequestException) as exc:
+        except _NETWORK_EXCEPTIONS as exc:
             raise self._wrap(exc) from exc
         log.info("response orderId=%s status=%s", response.get("orderId"), response.get("status"))
         return response

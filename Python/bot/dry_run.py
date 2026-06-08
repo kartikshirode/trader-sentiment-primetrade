@@ -2,12 +2,13 @@
 
 Used automatically when API credentials are missing, when DRY_RUN=1 is set,
 or when --dry-run is passed on the CLI. No network calls. Deterministic except
-for the order ID counter, which increments monotonically per process.
+for the order ID counter, which increments monotonically per client instance.
 """
 from __future__ import annotations
 
 import itertools
 import logging
+import time
 from typing import Any
 
 log = logging.getLogger("binance_bot.dry_run")
@@ -16,10 +17,9 @@ log = logging.getLogger("binance_bot.dry_run")
 class DryRunClient:
     """Stand-in for BinanceFuturesClient with the same public interface."""
 
-    _order_id_counter = itertools.count(999000001)
-
     def __init__(self, *_: Any, **__: Any) -> None:
-        pass
+        # Per-instance counter so each test gets a fresh sequence starting at 999000001.
+        self._order_id_counter = itertools.count(999000001)
 
     def get_account_balance(self) -> list[dict]:
         return [
@@ -44,23 +44,38 @@ class DryRunClient:
             avg_price = "67234.50"
             status = "FILLED"
             executed_qty = f"{quantity:.6f}"
+            # cumQuote is the quote-asset notional traded; for market fills, qty * avgPrice.
+            cum_quote = f"{quantity * 67234.50:.8f}"
         else:
             avg_price = "0.00"
             status = "NEW"
             executed_qty = "0.000000"
+            cum_quote = "0.00000000"
+
+        # Use 8-decimal precision so low-priced coins like SHIBUSDT do not round to 0.00.
+        price_str = f"{price:.8f}" if price is not None else "0.00"
+        stop_price_str = f"{stop_price:.8f}" if stop_price is not None else "0.00"
 
         response = {
             "orderId": order_id,
+            "clientOrderId": f"dry-{order_id}",
             "symbol": symbol,
             "side": side,
             "type": order_type,
+            "origType": order_type,
             "status": status,
             "origQty": f"{quantity:.6f}",
             "executedQty": executed_qty,
+            "cumQuote": cum_quote,
             "avgPrice": avg_price,
-            "price": f"{price:.2f}" if price is not None else "0.00",
-            "stopPrice": f"{stop_price:.2f}" if stop_price is not None else "0.00",
+            "price": price_str,
+            "stopPrice": stop_price_str,
             "timeInForce": time_in_force,
+            "workingType": "CONTRACT_PRICE",
+            "positionSide": "BOTH",
+            "reduceOnly": False,
+            "closePosition": False,
+            "updateTime": time.time_ns() // 1_000_000,
             "dryRun": True,
         }
         log.info(
