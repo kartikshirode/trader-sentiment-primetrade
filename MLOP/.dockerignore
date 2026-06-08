@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.git/
+.gitignore
+tests/
+docs/
+README.md
+*.md
+metrics.json
+run.log
+.venv/
+venv/

@@ -1,0 +1,6 @@
+2026-06-08T15:18:21 [INFO] mlops: job start
+2026-06-08T15:18:21 [INFO] mlops: config loaded: seed=42 window=5 version=v1
+2026-06-08T15:18:21 [INFO] mlops: rows loaded: 10000
+2026-06-08T15:18:21 [INFO] mlops: rolling mean + signal computed (window=5)
+2026-06-08T15:18:21 [INFO] mlops: metrics summary: rows_processed=10000 signal_rate=0.4989 latency_ms=16
+2026-06-08T15:18:21 [INFO] mlops: job end: success
