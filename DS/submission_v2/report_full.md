@@ -7,6 +7,13 @@ geometry: margin=2cm
 
 # Trader Performance vs Bitcoin Sentiment (v2)
 
+## Headline numbers
+
+- **Extreme Greed regime** posts the highest profitability across every metric (win rate 89.2 %, profit factor 11.0, ROI 2.18 %).
+- **Plain Greed regime** is the worst by Sharpe (3.41) and drawdown ($-419k).
+- **Win-probability model** clears AUC 0.81 in Extreme Fear, AUC 0.49 in plain Fear; the model is most useful as an extreme-zone filter.
+- **Strategy backtest** (regime filter + win-prob filter) ships +13.5 % more PnL on half the trades, Sharpe 14.6 vs 6.6 baseline, zero drawdown.
+
 Primetrade.ai DS submission. Author: Kartik Shirode. Second pass on the same brief after the v1 EDA-only submission was not shortlisted. This version keeps the regime analysis and ranked-trader work from v1 and adds two ML models, a backtest, and an interactive Streamlit dashboard.
 
 ![Bitcoin Fear and Greed Index over time](sentiment_timeline.png)
@@ -71,7 +78,9 @@ Overall test AUC: **0.6129**. The interesting story is the per-regime breakdown:
 | regime_Greed        | 8,133  | 0.6175 |
 | regime_Neutral      | 3,250  | 0.5818 |
 
-The model has clear predictive power on Extreme Fear days (AUC 0.81) and useful signal on Greed days (0.62). On plain Fear days the AUC sits at chance (0.49) — those trades look essentially random given the features. That asymmetry is the actionable result: the model is most useful as a filter when the index is in the extreme zones, not the middle.
+The model has clear predictive power on Extreme Fear days (AUC 0.81) and useful signal on Greed days (0.62). On plain Fear days the AUC sits at chance (0.49); those trades look essentially random given the features. That asymmetry is the actionable result: the model is most useful as a filter when the index is in the extreme zones, not the middle.
+
+Extreme Greed is missing from the per-regime AUC table because the regime had under 50 close events in the held-out test window, so the per-slice AUC was suppressed to avoid a noisy estimate (see the `mask.sum() < 50` guard in `evaluate_winprob`).
 
 Calibration plot and top-10 feature importance are in `outputs/figures/winprob_calibration.png` and `outputs/figures/winprob_feature_importance.png`. Persisted at `models/winprob_xgb.pkl`.
 
@@ -90,7 +99,7 @@ Strategy rule: take a trade only if `predicted_win_prob >= 0.60` AND `regime != 
 | Sharpe (daily)     | 14.64      | 6.62       |
 | Max drawdown       | $0         | $-419,020  |
 
-The strategy ships **+13.5 percent more PnL on half the trades**, **doubles the Sharpe**, and **completely avoids the $419k drawdown event** that lives inside the Greed regime. The "Greed = avoid" rule is doing most of the work here. A sensitivity sweep on `min_winprob` alone (without the Greed exclusion) shows the threshold by itself does not produce uplift — the regime filter is the load-bearing piece.
+The strategy ships **+13.5 percent more PnL on half the trades**, **doubles the Sharpe**, and **completely avoids the $419k drawdown event** that lives inside the Greed regime. The "Greed = avoid" rule is doing most of the work here. A sensitivity sweep on `min_winprob` alone (without the Greed exclusion) shows the threshold by itself does not produce uplift; the regime filter is the load-bearing piece.
 
 | min_winprob | uplift_pct | Sharpe | Max DD       |
 | ----------- | ---------- | ------ | ------------ |
@@ -108,9 +117,9 @@ The takeaway: the model is useful, but it is the **regime rule plus the model** 
 
 `app/streamlit_app.py` is a 3-page Streamlit app a reviewer can run with `streamlit run app/streamlit_app.py` from the `DS/` folder. Pages:
 
-1. **Overview** — date-range filter, regime distribution, headline metrics by regime, cumulative PnL by regime.
-2. **Trader Explorer** — searchable account dropdown. Shows that trader's per-regime metrics, their cohort badge, per-coin PnL, and the model's predicted vs realised win rate on their close events.
-3. **Strategy Simulator** — sliders for `min_winprob`, regime exclusions, and cohort filters. Outputs the live backtest table (taken trades, PnL, Sharpe, max DD vs baseline) and the equity curve.
+1. **Overview**, date-range filter, regime distribution, headline metrics by regime, cumulative PnL by regime.
+2. **Trader Explorer**, searchable account dropdown. Shows that trader's per-regime metrics, their cohort badge, per-coin PnL, and the model's predicted vs realised win rate on their close events.
+3. **Strategy Simulator**, sliders for `min_winprob`, regime exclusions, and cohort filters. Outputs the live backtest table (taken trades, PnL, Sharpe, max DD vs baseline) and the equity curve.
 
 ## 8. Caveats
 
@@ -120,6 +129,7 @@ The takeaway: the model is useful, but it is the **regime rule plus the model** 
 - 32 active traders is a small cohort sample. The headline regime numbers use the full 211k trades so those are sturdier than the cohort characterisations.
 - The Sharpe number uses sqrt(365) annualisation, standard for 24/7 crypto markets but inflated vs the 252-day equity convention.
 - The win-prob model uses a time-based split (first 80% train, last 20% test). Any per-trader feature is computed on earlier trades only, so there is no leakage by construction.
+- XGBoost uses n_jobs=1 for bit-exact reproducibility across machines.
 
 ## 9. Strategy ideas worth a follow-up
 
@@ -130,13 +140,13 @@ The takeaway: the model is useful, but it is the **regime rule plus the model** 
 
 ## 10. Files in this submission
 
-- `notebooks/01_eda.ipynb` — cleaned EDA from v1.
-- `notebooks/02_modeling.ipynb` — cohort clustering + win-prob model fit + diagnostics.
-- `notebooks/03_backtest.ipynb` — walk-forward backtest + sensitivity sweep.
-- `app/streamlit_app.py` — 3-page interactive dashboard.
-- `src/{data_loader, features, metrics, models, backtest}.py` — modular code, importable.
-- `models/{cohort_kmeans, winprob_xgb}.pkl` — persisted model artefacts.
-- `outputs/figures/*.png` — saved diagnostic plots.
-- `outputs/tables/*.csv` — metric tables (regime, cohort description, model eval, backtest summary, sensitivity).
-- `tests/` — pytest suite covering metrics, models, and backtest (16 tests).
-- `submission_v1/` — the original v1 artefacts preserved as backup.
+- `notebooks/01_eda.ipynb`, cleaned EDA from v1.
+- `notebooks/02_modeling.ipynb`, cohort clustering + win-prob model fit + diagnostics.
+- `notebooks/03_backtest.ipynb`, walk-forward backtest + sensitivity sweep.
+- `app/streamlit_app.py`, 3-page interactive dashboard.
+- `src/{data_loader, features, metrics, models, backtest}.py`, modular code, importable.
+- `models/{cohort_kmeans, winprob_xgb}.pkl`, persisted model artefacts.
+- `outputs/figures/*.png`, saved diagnostic plots.
+- `outputs/tables/*.csv`, metric tables (regime, cohort description, model eval, backtest summary, sensitivity).
+- `tests/`, pytest suite covering metrics, models, and backtest (16 tests).
+- `submission_v1/`, the original v1 artefacts preserved as backup.
