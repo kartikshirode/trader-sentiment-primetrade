@@ -6,8 +6,8 @@ Primetrade.ai DS submission v2. Joins 211k Hyperliquid trades to the daily Bitco
 
 - **Extreme Greed regime** posts the highest profitability across every metric (win rate 89.2 %, profit factor 11.0, ROI 2.18 %).
 - **Plain Greed regime** is the worst by Sharpe (3.41) and drawdown ($-419k).
-- **Win-probability model** clears AUC 0.81 in Extreme Fear, AUC 0.49 in plain Fear; the model is most useful as an extreme-zone filter.
-- **Strategy backtest** (regime filter + win-prob filter) ships +13.5 % more PnL on half the trades, Sharpe 14.6 vs 6.6 baseline, zero drawdown.
+- **Win-probability model** clears AUC 0.81 in Extreme Fear, AUC 0.46 in plain Fear; the model is most useful as an extreme-zone filter.
+- **Strategy backtest** (regime filter + win-prob filter) ships +13.4 % more PnL on half the trades, Sharpe 15.7 vs 6.6 baseline, zero drawdown.
 
 Full writeup in [outputs/report.md](outputs/report.md).
 

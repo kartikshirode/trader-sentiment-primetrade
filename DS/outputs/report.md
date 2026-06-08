@@ -48,17 +48,17 @@ Persisted at `models/cohort_kmeans.pkl`. Per-trader cohort labels are in `models
 
 Trained to predict `is_win = closed_pnl > 0` on the 104,402 close events that have a regime label. Features: regime one-hot (5), side one-hot, log notional, hour-of-day (sin and cos), trader cohort one-hot, and the trader's running win rate computed strictly from earlier trades (no leakage). Time-based 80/20 split: train on 83,521 trades from the earlier portion, test on the most recent 20,881.
 
-Overall test AUC: **0.6129**. The interesting story is the per-regime breakdown:
+Overall test AUC: **0.5786**. The interesting story is the per-regime breakdown:
 
 | Slice               | n      | AUC    |
 | ------------------- | ------ | ------ |
-| Overall             | 20,881 | 0.6129 |
-| regime_Extreme Fear | 919    | 0.8075 |
-| regime_Fear         | 8,579  | 0.4874 |
-| regime_Greed        | 8,133  | 0.6175 |
-| regime_Neutral      | 3,250  | 0.5818 |
+| Overall             | 20,881 | 0.5786 |
+| regime_Extreme Fear | 919    | 0.8122 |
+| regime_Fear         | 8,579  | 0.4575 |
+| regime_Greed        | 8,133  | 0.5432 |
+| regime_Neutral      | 3,250  | 0.5624 |
 
-The model has clear predictive power on Extreme Fear days (AUC 0.81) and useful signal on Greed days (0.62). On plain Fear days the AUC sits at chance (0.49); those trades look essentially random given the features. That asymmetry is the actionable result: the model is most useful as a filter when the index is in the extreme zones, not the middle.
+The model has clear predictive power on Extreme Fear days (AUC 0.81). Every other regime sits near chance (AUC 0.46 to 0.56), so the model is essentially worthless outside the extreme zones. That asymmetry is the actionable result: treat the model as an Extreme-Fear-only filter, not a general edge.
 
 Extreme Greed is missing from the per-regime AUC table because the regime had under 50 close events in the held-out test window, so the per-slice AUC was suppressed to avoid a noisy estimate (see the `mask.sum() < 50` guard in `evaluate_winprob`).
 
@@ -70,20 +70,20 @@ Strategy rule: take a trade only if `predicted_win_prob >= 0.60` AND `regime != 
 
 | Metric             | Strategy   | Baseline   |
 | ------------------ | ---------- | ---------- |
-| Trades taken       | 11,408     | 20,881     |
-| Total PnL          | $1,198,945 | $1,056,505 |
-| Sharpe (daily)     | 14.64      | 6.62       |
+| Trades taken       | 11,444     | 20,881     |
+| Total PnL          | $1,197,572 | $1,056,505 |
+| Sharpe (daily)     | 15.72      | 6.62       |
 | Max drawdown       | $0         | $-419,020  |
 
-The strategy ships **+13.5 percent more PnL on half the trades**, **doubles the Sharpe**, and **completely avoids the $419k drawdown event** that lives inside the Greed regime. The "Greed = avoid" rule is doing most of the work here. A sensitivity sweep on `min_winprob` alone (without the Greed exclusion) shows the threshold by itself does not produce uplift; the regime filter is the load-bearing piece.
+The strategy ships **+13.4 percent more PnL on half the trades**, **more than doubles the Sharpe (15.72 vs 6.62)**, and **completely avoids the $419k drawdown event** that lives inside the Greed regime. The "Greed = avoid" rule is doing most of the work here. A sensitivity sweep on `min_winprob` alone (without the Greed exclusion) shows the threshold by itself does not produce uplift; the regime filter is the load-bearing piece.
 
 | min_winprob | uplift_pct | Sharpe | Max DD       |
 | ----------- | ---------- | ------ | ------------ |
-| 0.50        | +1.07 %    | 6.70   | $-416,701    |
-| 0.55        | -3.27 %    | 6.41   | $-418,477    |
-| 0.60        | -5.96 %    | 6.26   | $-415,276    |
-| 0.65        | -10.99 %   | 5.90   | $-418,468    |
-| 0.70        | -13.85 %   | 5.69   | $-431,533    |
+| 0.50        | -1.53 %    | 6.51   | $-419,161    |
+| 0.55        | -5.95 %    | 6.39   | $-420,431    |
+| 0.60        | -9.01 %    | 6.21   | $-418,227    |
+| 0.65        | -12.81 %   | 6.02   | $-420,884    |
+| 0.70        | -14.31 %   | 6.08   | $-399,075    |
 
 The takeaway: the model is useful, but it is the **regime rule plus the model** that beats baseline. Either alone underperforms.
 
@@ -108,7 +108,7 @@ The takeaway: the model is useful, but it is the **regime rule plus the model** 
 ## 9. Strategy ideas worth a follow-up
 
 1. **Avoid the middle of a greed rally.** Confirmed by both the EDA and the backtest. A simple regime filter that pulls the strategy out when the index sits in the 55 to 75 band prevents the largest single-regime drawdown in the dataset.
-2. **Use the win-prob model as an Extreme-Fear-only filter.** AUC 0.81 in that regime is real signal. AUC 0.49 in Fear means do not bother filtering there.
+2. **Use the win-prob model as an Extreme-Fear-only filter.** AUC 0.81 in that regime is real signal. AUC 0.46 in plain Fear and 0.54 in Greed mean the model is not worth running outside the extreme zones.
 3. **Concentrate exposure on cohort 4 traders.** Six accounts, profit factor 30, win rate above 0.88 across all five regimes. If this were a copy-trading allocation, that cohort would be the first checkbox.
 4. **Cohort 6 as a tail-risk hedge.** Two accounts that go short into Greed regimes and hit on conviction trades. Small allocation, asymmetric payoff.
 

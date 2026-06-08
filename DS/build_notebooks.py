@@ -292,7 +292,7 @@ X_test = test.drop(columns=[c for c in drop if c in test.columns]).values
 proba_test = model.predict_proba(X_test)[:, 1]
 
 # build a trades frame aligned with proba_test
-closes_sorted = closes.sort_values('ts').reset_index(drop=True)
+closes_sorted = closes.sort_values('ts', kind='mergesort').reset_index(drop=True)
 test_idx = closes_sorted.index[len(train):]
 trades_test = closes_sorted.iloc[test_idx].copy()
 trades_test['cohort'] = trades_test['account'].map(cohort_labels).fillna(-1).astype(int)
