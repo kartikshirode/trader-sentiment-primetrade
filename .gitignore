@@ -8,6 +8,9 @@ venv/
 *.csv
 *.zip
 
+# MLOps Task 0 requires data.csv to be committed (Docker image bundles it)
+!MLOP/data.csv
+
 submission/primetrade_kartik_shirode.zip
 
 .DS_Store
